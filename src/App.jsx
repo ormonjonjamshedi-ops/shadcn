@@ -256,7 +256,7 @@ async function handleAdd() {
       <Dialog open={openEdit} onOpenChange={setOpenEdit}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Edit</DialogTitle>
+            <DialogTitle>Edite</DialogTitle>
             <DialogDescription>Change the data and click save.</DialogDescription>
           </DialogHeader>
           <FieldGroup>
