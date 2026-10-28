@@ -3,11 +3,13 @@ import { createBrowserRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
 
 import { Layout } from "./layout/Layout";
-import Main from "./Pages/Main";
 import Catalog from "./Pages/Catalog";
 import Product from "./Pages/Product";
 import Login from "./Pages/Login";
 import AuthFlow from "./Pages/AuthFlow";
+import Users from "./Pages/Users";
+
+
 
 const App = () => {
   const router = createBrowserRouter([
@@ -21,12 +23,12 @@ const App = () => {
       children: [
         {
           index: true,
-          element: <Main />,
+          element: <Users/>,
         },
         {
           path: "product",
 
-          element: <Product />,
+          element: <Product/>,
         },
         {
           path: "Catalog",
