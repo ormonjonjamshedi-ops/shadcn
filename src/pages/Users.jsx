@@ -18,37 +18,44 @@ const initialState = {
   ]
 }
 
-// Reducer bo switch-case ivazshuda ba else-if
 const countReducer = (state, action) => {
-  if (action.type === "SET_SEARCH") {
-    return { ...state, searchQuery: action.payload }
-  } else if (action.type === "DELETE") {
-    return {
-      ...state,
-      data: state.data.filter((item) => item.id !== action.payload)
-    }
-  } else if (action.type === "ADD_USER") {
-    return {
-      ...state,
-      data: [...state.data, { ...action.payload, id: Date.now() }],
-      isAddModalOpen: false
-    }
-  } else if (action.type === "EDIT_USER") {
-    return {
-      ...state,
-      data: state.data.map((item) =>
-        item.id === action.payload.id ? action.payload : item
-      ),
-      editUser: null
-    }
-  } else if (action.type === "SET_SELECTED_USER") {
-    return { ...state, selectedUser: action.payload }
-  } else if (action.type === "SET_EDIT_USER") {
-    return { ...state, editUser: action.payload }
-  } else if (action.type === "TOGGLE_ADD_MODAL") {
-    return { ...state, isAddModalOpen: action.payload }
-  } else {
-    return state
+  switch (action.type) {
+    case "SET_SEARCH":
+      return { ...state, searchQuery: action.payload }
+
+    case "DELETE":
+      return {
+        ...state,
+        data: state.data.filter((item) => item.id !== action.payload)
+      }
+
+    case "ADD_USER":
+      return {
+        ...state,
+        data: [...state.data, { ...action.payload, id: Date.now() }],
+        isAddModalOpen: false
+      }
+
+    case "EDIT_USER":
+      return {
+        ...state,
+        data: state.data.map((item) =>
+          item.id === action.payload.id ? action.payload : item
+        ),
+        editUser: null
+      }
+
+    case "SET_SELECTED_USER":
+      return { ...state, selectedUser: action.payload }
+
+    case "SET_EDIT_USER":
+      return { ...state, editUser: action.payload }
+
+    case "TOGGLE_ADD_MODAL":
+      return { ...state, isAddModalOpen: action.payload }
+
+    default:
+      return state
   }
 }
 
@@ -62,42 +69,35 @@ const Users = () => {
   )
 
   return (
-    <div className="relative min-h-screen overflow-hidden text-white p-6 bg-slate-950">
-      {/* Anime Glowing Background Elements */}
-      <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -left-40 w-96 h-96 bg-purple-600/30 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-1/2 -right-20 w-80 h-80 bg-cyan-500/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute -bottom-20 left-1/3 w-[500px] h-[500px] bg-pink-600/20 rounded-full blur-3xl animate-pulse delay-700"></div>
-        
-        {/* Animated Cyber/Anime Grid overlay */}
-        <div 
-          className="absolute inset-0 opacity-20"
-          style={{
-            backgroundImage: `radial-gradient(#38bdf8 1px, transparent 1px), radial-gradient(#a855f7 1px, #020617 1px)`,
-            backgroundSize: `40px 40px`,
-            backgroundPosition: `0 0, 20px 20px`
-          }}
-        ></div>
-      </div>
+    <div className="relative min-h-screen overflow-hidden text-white p-6">
+      {/* Background Video */}
+      <video
+        autoPlay
+        loop
+        muted
+        className="absolute top-0 left-0 w-full h-full object-cover -z-10 brightness-50"
+      >
+        <source src="https://assets.mixkit.co/videos/preview/mixkit-abstract-technology-network-lines-27661-large.mp4" type="video/mp4" />
+      </video>
 
       {/* Title */}
-      <div className="flex justify-center gap-10 text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-pink-500 to-purple-400 drop-shadow-[0_5px_5px_rgba(0,0,0,0.8)] tracking-wider">
+      <div className="flex justify-center gap-10 text-4xl font-bold text-cyan-400 drop-shadow-md">
         <h1>MY COMMAND</h1>
         <h1>ALWAYS READY</h1>
       </div>
 
       {/* Controls */}
-      <div className="flex justify-between items-center my-8 backdrop-blur-xl bg-white/5 p-6 rounded-2xl border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.15)]">
+      <div className="flex justify-between items-center my-8 backdrop-blur-md bg-white/10 p-6 rounded-2xl border border-white/20">
         <input
           type="search"
           value={state.searchQuery}
           onChange={(e) => dispatch({ type: "SET_SEARCH", payload: e.target.value })}
-          className="w-96 border-2 border-cyan-400 p-4 rounded-xl text-xl text-white bg-black/50 focus:bg-black/80 focus:border-pink-500 outline-none transition-all placeholder-gray-400"
-          placeholder="Search team member..."
+          className="w-96 border-2 border-cyan-400 p-4 rounded-xl text-xl text-black bg-white/80 focus:bg-white outline-none"
+          placeholder="Search here..."
         />
         <button
           onClick={() => dispatch({ type: "TOGGLE_ADD_MODAL", payload: true })}
-          className="w-60 p-4 bg-gradient-to-r from-emerald-400 to-cyan-500 hover:from-emerald-500 hover:to-cyan-600 font-bold rounded-xl text-xl transition-all shadow-lg hover:shadow-cyan-500/50 hover:scale-105 active:scale-95"
+          className="w-60 p-4 bg-emerald-500 hover:bg-emerald-600 font-bold rounded-xl text-xl transition-all shadow-lg"
         >
           ADD +
         </button>
@@ -108,39 +108,39 @@ const Users = () => {
         {filteredData.map((person) => (
           <div
             key={person.id}
-            className="backdrop-blur-md bg-slate-900/60 border border-purple-500/30 rounded-2xl p-5 shadow-2xl flex flex-col justify-between hover:border-cyan-400/60 transition-all hover:-translate-y-1"
+            className="backdrop-blur-lg bg-black/40 border border-white/20 rounded-xl p-5 shadow-2xl flex flex-col justify-between"
           >
             <div>
               <img
                 src={person.image}
                 alt={`${person.name} ${person.surname}`}
-                className="rounded-full w-36 h-36 object-cover mx-auto mb-4 border-2 border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)]"
+                className="rounded-full w-36 h-36 object-cover mx-auto mb-4 border-2 border-cyan-400 shadow-md"
               />
               <div className="text-center space-y-1">
-                <h2 className="text-2xl font-bold text-cyan-300 tracking-wide">
+                <h2 className="text-2xl font-semibold text-cyan-300">
                   {person.name} {person.surname}
                 </h2>
-                <p className="text-lg text-purple-200 font-medium">{person.work}</p>
-                <p className="text-emerald-400 font-semibold">Age: {person.age}</p>
+                <p className="text-lg text-gray-300">{person.work}</p>
+                <p className="text-green-400">Age: {person.age}</p>
               </div>
             </div>
 
             <div className="flex gap-2 mt-6">
               <button
                 onClick={() => dispatch({ type: "DELETE", payload: person.id })}
-                className="flex-1 bg-red-500/80 hover:bg-red-600 py-2 rounded-lg font-semibold transition-all border border-red-400/30"
+                className="flex-1 bg-red-500 hover:bg-red-600 py-2 rounded-lg font-semibold transition-all"
               >
                 Delete
               </button>
               <button
                 onClick={() => dispatch({ type: "SET_EDIT_USER", payload: person })}
-                className="flex-1 bg-amber-500/80 hover:bg-amber-600 py-2 rounded-lg font-semibold transition-all border border-amber-400/30"
+                className="flex-1 bg-amber-500 hover:bg-amber-600 py-2 rounded-lg font-semibold transition-all"
               >
                 Edit
               </button>
               <button
                 onClick={() => dispatch({ type: "SET_SELECTED_USER", payload: person })}
-                className="flex-1 bg-cyan-600/80 hover:bg-cyan-500 py-2 rounded-lg font-semibold transition-all border border-cyan-400/30"
+                className="flex-1 bg-blue-500 hover:bg-blue-600 py-2 rounded-lg font-semibold transition-all"
               >
                 Info
               </button>
@@ -152,16 +152,16 @@ const Users = () => {
       {/* Info Modal */}
       {state.selectedUser && (
         <UserModal title="User Info" onClose={() => dispatch({ type: "SET_SELECTED_USER", payload: null })}>
-          <div className="text-center text-white space-y-3">
-            <img src={state.selectedUser.image} className="w-32 h-32 rounded-full mx-auto border-2 border-cyan-400 object-cover shadow-[0_0_10px_rgba(34,211,238,0.8)]" />
-            <h3 className="text-2xl font-bold text-cyan-300">{state.selectedUser.name} {state.selectedUser.surname}</h3>
-            <p className="text-lg text-gray-200">Work: {state.selectedUser.work}</p>
-            <p className="text-lg text-emerald-400">Age: {state.selectedUser.age}</p>
+          <div className="text-center text-black space-y-3">
+            <img src={state.selectedUser.image} className="w-32 h-32 rounded-full mx-auto border-2 border-cyan-500 object-cover" />
+            <h3 className="text-2xl font-bold">{state.selectedUser.name} {state.selectedUser.surname}</h3>
+            <p className="text-lg">Work: {state.selectedUser.work}</p>
+            <p className="text-lg">Age: {state.selectedUser.age}</p>
           </div>
         </UserModal>
       )}
 
-      {/* Add Modal */}
+      
       {state.isAddModalOpen && (
         <UserModal title="Add New User" onClose={() => dispatch({ type: "TOGGLE_ADD_MODAL", payload: false })}>
           <UserForm
@@ -171,7 +171,7 @@ const Users = () => {
         </UserModal>
       )}
 
-      {/* Edit Modal */}
+      
       {state.editUser && (
         <UserModal title="Edit User" onClose={() => dispatch({ type: "SET_EDIT_USER", payload: null })}>
           <UserForm
@@ -186,11 +186,11 @@ const Users = () => {
 }
 
 const UserModal = ({ title, children, onClose }) => (
-  <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-    <div className="bg-slate-900 border border-cyan-500/50 rounded-2xl p-6 w-full max-w-md text-white relative shadow-[0_0_30px_rgba(6,182,212,0.3)]">
-      <h2 className="text-2xl font-bold mb-4 text-center border-b border-cyan-500/30 pb-2 text-cyan-400">{title}</h2>
+  <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
+    <div className="bg-white rounded-2xl p-6 w-full max-w-md text-black relative shadow-2xl">
+      <h2 className="text-2xl font-bold mb-4 text-center border-b pb-2">{title}</h2>
       {children}
-      <button onClick={onClose} className="mt-4 w-full bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg transition-all">
+      <button onClick={onClose} className="mt-4 w-full bg-gray-500 hover:bg-gray-600 text-white py-2 rounded-lg">
         Close
       </button>
     </div>
@@ -214,7 +214,7 @@ const UserForm = ({ initialData, onSubmit, buttonText }) => {
         placeholder="Name"
         value={formData.name}
         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-        className="w-full bg-slate-800 border border-slate-700 p-2 rounded text-white focus:border-cyan-400 outline-none"
+        className="w-full border p-2 rounded"
         required
       />
       <input
@@ -222,7 +222,7 @@ const UserForm = ({ initialData, onSubmit, buttonText }) => {
         placeholder="Surname"
         value={formData.surname}
         onChange={(e) => setFormData({ ...formData, surname: e.target.value })}
-        className="w-full bg-slate-800 border border-slate-700 p-2 rounded text-white focus:border-cyan-400 outline-none"
+        className="w-full border p-2 rounded"
         required
       />
       <input
@@ -230,7 +230,7 @@ const UserForm = ({ initialData, onSubmit, buttonText }) => {
         placeholder="Work"
         value={formData.work}
         onChange={(e) => setFormData({ ...formData, work: e.target.value })}
-        className="w-full bg-slate-800 border border-slate-700 p-2 rounded text-white focus:border-cyan-400 outline-none"
+        className="w-full border p-2 rounded"
         required
       />
       <input
@@ -238,10 +238,10 @@ const UserForm = ({ initialData, onSubmit, buttonText }) => {
         placeholder="Age"
         value={formData.age}
         onChange={(e) => setFormData({ ...formData, age: Number(e.target.value) })}
-        className="w-full bg-slate-800 border border-slate-700 p-2 rounded text-white focus:border-cyan-400 outline-none"
+        className="w-full border p-2 rounded"
         required
       />
-      <button type="submit" className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white py-2 rounded hover:from-cyan-600 hover:to-blue-700 font-semibold transition-all">
+      <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
         {buttonText}
       </button>
     </form>
