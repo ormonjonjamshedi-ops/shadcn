@@ -52,7 +52,7 @@ const Cart = () => {
         <div className="flex justify-center gap-3">
           <Link to="/"
             className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition"
-          >Ба асосӣ рафтан</Link>
+          >go to Home</Link>
 
           <Link to="/favorites"
             className="border border-green-600 text-green-600 px-6 py-3 rounded-lg hover:bg-green-50 transition"
