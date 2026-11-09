@@ -1,54 +1,65 @@
+import axios from "axios";
 import { create } from "zustand";
 
-export const useTodo = create((set) => ({
-  data: [
-    {
-      id: 1,
-      name: "Abu",
-      age: 13,
-      city: "Dushanbe",
-      img: "./public/Ellipse.png",
-      work: "Student",
-    },
-    {
-      id: 2,
-      name: "salim",
-      age: 18,
-      city: "Khujand",
-      img: "./public/Ellipsee.png",
-      work: "Developer",
-    },
-  ],
+export const api = "https://to-dos-api.softclub.tj/api/to-dos";
+export const imageApi = "https://to-dos-api.softclub.tj/images/";
 
-  count: 0,
+export const useTodo = create((set, get) => ({
+  data: [],
+  getData: async () => {
+    try {
+      const response = await axios.get(api);
 
-  increment: () =>
-    set((state) => ({
-      count: state.count + 1,
-    })),
-
-  addUser: (user) => {
-    const newUser = {
-      ...user,
-      id: crypto.randomUUID(),
-    };
-
-    set((state) => ({
-      data: [...state.data, newUser],
-    }));
+      set({
+        data: response.data.data || response.data,
+      });
+    } catch (error) {
+      console.log(error);
+    }
   },
 
-  updateUser: (id, updatedUser) =>
-    set((state) => ({
-      data: state.data.map((user) =>
-        user.id === id
-          ? { ...user, ...updatedUser, id: user.id }
-          : user
-      ),
-    })),
+ 
+  addData: async (todo) => {
+    try {
+      const form = new FormData();
+      form.append("name", todo.name);
+      form.append("description", todo.description);
+      await axios.post(api, form);
+      await get().getData();
+      return true;
+    } catch (error) {
+      console.log(error);
+      return false;
+    }
+  },
 
-  deleteUser: (id) =>
-    set((state) => ({
-      data: state.data.filter((user) => user.id !== id),
-    })),
+  editData: async (todo) => {
+    try {
+      const form = new FormData();
+
+      form.append("id", todo.id);
+      form.append("name", todo.name);
+      form.append("description", todo.description);
+
+      await axios.put(api, form);
+      await get().getData();
+
+      return true;
+    } catch (error) {
+      console.log(error);
+      return false;
+    }
+  },
+
+ 
+  deleteData: async (id) => {
+    try {
+      await axios.delete(api, {
+        params: { id },
+      });
+      await get().getData();
+    } catch (error) {
+      console.log(error);
+    }
+  },
 }));
