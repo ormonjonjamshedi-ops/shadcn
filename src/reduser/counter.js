@@ -3,46 +3,37 @@ import { createSlice } from '@reduxjs/toolkit'
 
 
 const initialState= {
-  value: 100,
   data:[
     {
       id:1,
       name:"Abdullo",
       age:16,
-      job:"bot",
+      job:"student",
     },
      {
       id:2,
       name:"Said",
       age:12,
-      job:"bot",
+      job:"teacher",
     },
      {
       id:3,
       name:"Abu",
       age: 23,
-      job:"bot",
+      job:"bloger",
     },
      {
       id:4,
       name:"Sabad",
       age:55,
-      job:"bot",
+      job:"developer",
     },
   ]
-
 }
-
 export const counterSlice = createSlice({
   name: 'counter',
   initialState,
   reducers: {
-    increment: (state, action) => {
-        state.value+=1
-  },
-decrement:(state, action)=>{
-    state.value -=1
-},
 deleteUser:(state,{payload})=>{
   state.data=state.data.filter((e) =>e.id!=payload)
 },
@@ -56,5 +47,5 @@ editUser:(state,{payload:newUser})=>{
   }
 })
 
-export const {increment, decrement, deleteUser, addUser, editUser} =counterSlice.actions
+export const { deleteUser, addUser, editUser} =counterSlice.actions
 export default counterSlice.reducer
