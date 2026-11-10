@@ -1,184 +1,203 @@
-import { imageApi, useTodo } from "@/Component/todo";
-import { useEffect, useState } from "react";
+
+import {
+  decrement,
+  increment,
+  deleteUser,
+  addUser,
+  editUser
+} from '@/reduser/counter'
+
+import React, { useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 
 const Home = () => {
-  const {  data, saving, getData, addData,editData, deleteData,} = useTodo();
+  const { value, data } = useSelector((store) => store.counter)
+  const dispatch = useDispatch()
 
-  const [open, setOpen] = useState(false);
-  const [id, setId] = useState(null);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const [elem, setElem] = useState({
+    id: null,
+    name: "",
+    age: "",
+    job: ""
+  })
 
-  useEffect(() => {
-    getData();
-  }, [getData]);
+  const [addOpen, setAddOpen] = useState(false)
+  const [editOpen, setEditOpen] = useState(false)
 
-  function openAdd() {
-    setId(null);
-    setName("");
-    setDescription("");
-    setOpen(true);
+  // Add User
+  const handleAdd = (e) => {
+    e.preventDefault()
+
+    const newUser = {
+      id: Date.now(),
+      name: elem.name,
+      age: elem.age,
+      job: elem.job
+    }
+
+    dispatch(addUser(newUser))
+
+    setElem({ id: null, name: "", age: "", job: "" })
+    setAddOpen(false)
   }
 
-  function openEdit(item) {
-    setId(item.id);
-    setName(item.name);
-    setDescription(item.description);
+  // Edit User
+  const handleEdit = (user) => {
+    setElem({
+      id: user.id,
+      name: user.name,
+      age: user.age,
+      job: user.job
+    })
 
-    setOpen(true);
+    setEditOpen(true)
   }
 
-  async function saveTodo(e) {
-  e.preventDefault();
+  const handleSave = (e) => {
+    e.preventDefault()
 
-  if (saving) return;
-  if (!name.trim() || !description.trim()) return;
+    dispatch(editUser(elem))
 
-  const todo = {
-    name: name.trim(),
-    description: description.trim(),
-  };
-
-  let success;
-
-  if (id === null) {
-    success = await addData(todo);
-  } else {
-    success = await editData({ ...todo, id });
+    setElem({ id: null, name: "", age: "", job: "" })
+    setEditOpen(false)
   }
-
-  if (success) {
-    setOpen(false);
-  }
-}
 
   return (
-    <div className="mx-auto max-w-xl p-5">
-      <h1 className="mb-4 text-2xl font-bold">
-        Todo List
-      </h1>
+    <div className="p-5">
 
-      <button
-        onClick={openAdd}
-        disabled={saving}
-        className="mb-4 rounded bg-blue-600 px-4 py-2 text-white"
-      >
-        Add Todo
-      </button>
+      {/* Counter */}
+      <div className="flex gap-4 items-center">
+        <button onClick={() => dispatch(decrement())}>-</button>
+        <h1>{value}</h1>
+        <button onClick={() => dispatch(increment())}>+</button>
+      </div>
 
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="dialog-title"
-            className="w-full max-w-sm rounded bg-white p-5 text-black"
-          >
-            <h2
-              id="dialog-title"
-              className="mb-4 text-xl font-bold"
-            >
-              {id === null ? "Add Todo" : "Edit Todo"}
-            </h2>
+      {/* Add Dialog */}
+      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <DialogTrigger asChild>
+          <button className="bg-green-600 text-white px-5 py-2 rounded-lg">
+            Add User
+          </button>
+        </DialogTrigger>
 
-            {error && (
-              <p role="alert" className="mb-3 text-red-600">
-                {error}
-              </p>
-            )}
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New User</DialogTitle>
+          </DialogHeader>
 
-            <form onSubmit={saveTodo} className="space-y-3">
-              <input
-                aria-label="Name"
-                placeholder="Name"
-                value={name}
-                onChange={(event) =>
-                  setName(event.target.value)
-                }
-                className="w-full rounded border p-2"
-                required
-              />
+          <form onSubmit={handleAdd} className="flex flex-col gap-3">
 
-              <input
-                aria-label="Description"
-                placeholder="Description"
-                value={description}
-                onChange={(event) =>
-                  setDescription(event.target.value)
-                }
-                className="w-full rounded border p-2"
-                required
-              />
-
-              <div className="flex gap-2">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="rounded bg-green-600 px-4 py-2 text-white"
-                >
-                  {saving ? "Saving..." : "Save"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  disabled={saving}
-                  className="rounded bg-gray-500 px-4 py-2 text-white"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {!open && error && (
-        <p role="alert" className="mb-3 text-red-600">
-          {error}
-        </p>
-      )}
-      {data.map((item) => (
-        <div
-          key={item.id}
-          className="mb-3 rounded border p-3"
-        >
-          {(item.images || []).map((image, index) => (
-            <img
-              key={index}
-              src={imageApi + (image.imageName || image)}
-              alt={item.name}
-              className="mb-2 h-32 w-full rounded object-cover"
+            <input
+              value={elem.name}
+              onChange={(e) => setElem({ ...elem, name: e.target.value })}
+              placeholder="Name"
+              className="border p-2 rounded"
+              required
             />
-          ))}
 
-          <h2 className="text-lg font-bold">
-            {item.name}
-          </h2>
+            <input
+              value={elem.age}
+              onChange={(e) => setElem({ ...elem, age: e.target.value })}
+              placeholder="Age"
+              type="number"
+              className="border p-2 rounded"
+              required
+            />
 
-          <p>{item.description}</p>
+            <input
+              value={elem.job}
+              onChange={(e) => setElem({ ...elem, job: e.target.value })}
+              placeholder="Job"
+              className="border p-2 rounded"
+              required
+            />
 
-          <div className="mt-3 flex gap-2">
+            <button className="bg-green-600 text-white p-2 rounded">
+              Add
+            </button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Users */}
+      <div className="mt-5">
+        {data.map((e) => (
+          <div key={e.id} className="flex gap-3 items-center border-2 rounded-xl p-3 my-2">
+
+            <h1>Name: {e.name}</h1>
+            <h1>Age: {e.age}</h1>
+            <h1>Job: {e.job}</h1>
+
             <button
-              onClick={() => openEdit(item)}
-              disabled={saving}
-              className="rounded bg-yellow-500 px-3 py-1 text-white"
+              onClick={() => dispatch(deleteUser(e.id))}
+              className="bg-red-500 text-white px-3 py-1 rounded"
+            >
+              Delete
+            </button>
+
+            <button
+              onClick={() => handleEdit(e)}
+              className="bg-blue-500 text-white px-3 py-1 rounded"
             >
               Edit
             </button>
 
-            <button
-              onClick={() => deleteData(item.id)}
-              disabled={saving}
-              className="rounded bg-red-600 px-3 py-1 text-white"
-            >
-              Delete
-            </button>
           </div>
-        </div>
-      ))}
-    </div>
-  );
-};
+        ))}
+      </div>
 
-export default Home;
+      {/* Edit Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleSave} className="flex flex-col gap-3">
+
+            <input
+              value={elem.name}
+              onChange={(e) => setElem({ ...elem, name: e.target.value })}
+              placeholder="Name"
+              className="border p-2 rounded"
+              required
+            />
+
+            <input
+              value={elem.age}
+              onChange={(e) => setElem({ ...elem, age: e.target.value })}
+              placeholder="Age"
+              type="number"
+              className="border p-2 rounded"
+              required
+            />
+
+            <input
+              value={elem.job}
+              onChange={(e) => setElem({ ...elem, job: e.target.value })}
+              placeholder="Job"
+              className="border p-2 rounded"
+              required
+            />
+
+            <button className="bg-blue-600 text-white p-2 rounded">
+              Save Changes
+            </button>
+
+          </form>
+        </DialogContent>
+      </Dialog>
+
+    </div>
+  )
+}
+
+export default Home
