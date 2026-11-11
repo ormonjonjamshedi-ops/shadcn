@@ -1,239 +1,203 @@
 
-import {
-  deleteUser,
-  addUser,
-  editUser
-} from '@/reduser/counter'
-
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-
-import { Button } from "@/components/ui/button"
+  getData,
+  handledelete,
+  addData,
+  editData
+} from '@/reduser/counter'
 
 const Home = () => {
-  const { value, data } = useSelector((store) => store.counter)
+  const [img, setImg] = useState("")
+  const [name, setName] = useState("")
+  const [role, setRole] = useState("")
+  const [open, setOpen] = useState(false)
+
+
+  const [editOpen, setEditOpen] = useState(false)
+  const [editId, setEditId] = useState(null)
+  const [editImg, setEditImg] = useState("")
+  const [editName, setEditName] = useState("")
+  const [editRole, setEditRole] = useState("")
+
+  const { data, isLoading } = useSelector((store) => store.counter)
   const dispatch = useDispatch()
 
-  const [elem, setElem] = useState({
-    id: null,
-    name: "",
-    age: "",
-    job: ""
-  })
+  useEffect(() => {
+    dispatch(getData())
+  }, [dispatch])
 
-  const [addOpen, setAddOpen] = useState(false)
-  const [editOpen, setEditOpen] = useState(false)
 
-  const resetForm = () => {
-    setElem({ id: null, name: "", age: "", job: "" })
-  }
-
-  const handleAdd = (e) => {
+  const handleAdd = async (e) => {
     e.preventDefault()
 
-    dispatch(addUser({
-      ...elem,
-      id: Date.now()
-    }))
+    try {
+      await dispatch(addData({
+        img,
+        name,
+        role
+      })).unwrap()
 
-    resetForm()
-    setAddOpen(false)
+      setImg("")
+      setName("")
+      setRole("")
+      setOpen(false)
+
+    } catch (error) {
+      console.log(error)
+    }
   }
 
-  const handleEdit = (user) => {
-    setElem(user)
+ 
+  const handleEditOpen = (item) => {
+    setEditId(item.id)
+    setEditImg(item.img)
+    setEditName(item.name)
+    setEditRole(item.role)
+
     setEditOpen(true)
   }
 
-  const handleSave = (e) => {
+  const handleEdit = async (e) => {
     e.preventDefault()
 
-    dispatch(editUser(elem))
+    try {
+      await dispatch(editData({
+        id: editId,
+        img: editImg,
+        name: editName,
+        role: editRole
+      })).unwrap()
 
-    resetForm()
-    setEditOpen(false)
+      setEditOpen(false)
+
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  const handleDelete = async (id) => {
+    try {
+      await dispatch(handledelete(id)).unwrap()
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="text-center text-3xl mt-20">
+        LOADING...
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 p-6">
+    <div className="p-10">
+      <button onClick={() => setOpen(true)} className="bg-green-600 text-white px-8 py-3 rounded-xl mb-10">ADD +</button>
+      {open && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-white w-[400px] p-7 rounded-2xl shadow-2xl">
 
-      {/* Header */}
-      <div className="max-w-6xl mx-auto">
-
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-800">
-              User Management
-            </h1>
-            <p className="text-gray-500">
-              Manage your users easily
-            </p>
-          </div>
-
-          {/* Add Dialog */}
-          <Dialog open={addOpen} onOpenChange={setAddOpen}>
-            <DialogTrigger asChild>
-              <Button
-                onClick={resetForm}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                + Add User
-              </Button>
-            </DialogTrigger>
-
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New User</DialogTitle>
-              </DialogHeader>
-
-              <form onSubmit={handleAdd} className="flex flex-col gap-4">
-
-                <input
-                  value={elem.name}
-                  onChange={(e) => setElem({...elem, name:e.target.value})}
-                  placeholder="Name"
-                  className="border rounded-lg p-3"
-                  required
-                />
-
-                <input
-                  value={elem.age}
-                  onChange={(e) => setElem({...elem, age:e.target.value})}
-                  placeholder="Age"
-                  type="number"
-                  className="border rounded-lg p-3"
-                  required
-                />
-
-                <input
-                  value={elem.job}
-                  onChange={(e) => setElem({...elem, job:e.target.value})}
-                  placeholder="Job"
-                  className="border rounded-lg p-3"
-                  required
-                />
-
-                <Button type="submit">Add User</Button>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
-        <div className="mb-5 flex justify-between">
-          <h2 className="text-2xl font-bold text-slate-800">
-            All Users
-          </h2>
-
-          <p className="text-gray-500">
-            Total: {data.length} users
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-
-          {data.map((e) => (
-            <div
-              key={e.id}
-              className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition p-6 border border-gray-100"
-            >
-
-          
-              <div className="flex items-center gap-4 mb-5">
-
-                <div className="w-14 h-14 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-2xl font-bold">
-                  {e.name.charAt(0).toUpperCase()}
-                </div>
-
-                <div>
-                  <h2 className="text-xl font-bold text-slate-800">
-                    {e.name}
-                  </h2>
-
-                  <p className="text-sm text-gray-500">
-                    {e.job}
-                  </p>
-                </div>
-
-              </div>
-
-              <div className="bg-slate-50 rounded-xl p-4 mb-5">
-                <p className="text-gray-500 text-sm">Age</p>
-                <h3 className="font-semibold text-slate-800">
-                  {e.age} years old
-                </h3>
-              </div>
-
-    
-              <div className="flex gap-3">
-
-                <Button
-                  onClick={() => handleEdit(e)}
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
-                >
-                  Edit
-                </Button>
-
-                <Button
-                  onClick={() => dispatch(deleteUser(e.id))}
-                  className="flex-1 bg-red-500 hover:bg-red-600"
-                >
-                  Delete
-                </Button>
-
-              </div>
-
-            </div>
-          ))}
-
-        </div>
-
-        <Dialog open={editOpen} onOpenChange={setEditOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Edit User</DialogTitle>
-            </DialogHeader>
-
-            <form onSubmit={handleSave} className="flex flex-col gap-4">
+            <form onSubmit={handleAdd} className="flex flex-col gap-4">
 
               <input
-                value={elem.name}
-                onChange={(e) => setElem({...elem, name:e.target.value})}
+                type="text"
+                placeholder="Image URL"
+                value={img}
+                onChange={(e) => setImg(e.target.value)}
+                className="border p-3 rounded-lg text-black"
+                required
+              />
+
+              <input
+                type="text"
                 placeholder="Name"
-                className="border rounded-lg p-3"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="border p-3 rounded-lg text-black"
                 required
               />
 
               <input
-                value={elem.age}
-                onChange={(e) => setElem({...elem, age:e.target.value})}
-                placeholder="Age"
-                type="number"
-                className="border rounded-lg p-3"
+                type="text"
+                placeholder="Role"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="border p-3 rounded-lg text-black"
+                required
+              />
+
+              <div className="flex gap-3 mt-3">
+                <button type="button" onClick={() => setOpen(false)} className="bg-gray-400 text-white p-3 rounded-lg w-full">Cancel</button>
+                <button type="submit" className="bg-green-600 text-white p-3 rounded-lg w-full">Add</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+   
+      {editOpen && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-white w-[400px] p-7 rounded-2xl shadow-2xl">
+            <form onSubmit={handleEdit} className="flex flex-col gap-4">
+
+              <input
+                type="text"
+                placeholder="Image URL"
+                value={editImg}
+                onChange={(e) => setEditImg(e.target.value)}
+                className="border p-3 rounded-lg text-black"
                 required
               />
 
               <input
-                value={elem.job}
-                onChange={(e) => setElem({...elem, job:e.target.value})}
-                placeholder="Job"
-                className="border rounded-lg p-3"
-                required
-              />
+                type="text"  placeholder="Name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="border p-3 rounded-lg text-black"
+                required/>
 
-              <Button type="submit">
-                Save Changes
-              </Button>
+              <input
+                type="text"
+                placeholder="Role"
+                value={editRole}
+                onChange={(e) => setEditRole(e.target.value)}
+                className="border p-3 rounded-lg text-black"
+                required/>
+
+              <div className="flex gap-3 mt-3">
+                <button type="button" onClick={() => setEditOpen(false)} className="bg-gray-400 text-white p-3 rounded-lg w-full">Cancel</button>
+
+                <button type="submit" className="bg-green-600 text-white p-3 rounded-lg w-full">Save</button>
+              </div>
 
             </form>
-          </DialogContent>
-        </Dialog>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+        {data?.map((e) => (
+          <div key={e.id} className="w-full border-2 bg-blue-100 text-center rounded-2xl p-5 shadow-lg">
+            <img src={e.image} alt={e.name} className="w-full h-80 object-cover rounded-xl"/>
+
+            <h1 className="text-2xl font-bold mt-3">{e.name}</h1>
+
+            <h1 className="text-lg text-gray-600">{e.role}</h1>
+
+            <div className="flex justify-center gap-3 mt-5">
+
+              <button className="p-3 bg-red-600 text-white rounded-xl" onClick={() => handleDelete(e.id)}>Delete</button>
+              <button className="p-3 bg-green-600 text-white rounded-xl"   onClick={() => handleEditOpen(e)}>Edit</button>
+</div>
+
+          </div>
+        ))}
 
       </div>
     </div>
