@@ -1,46 +1,55 @@
-import { create } from 'zustand'
 
-const useSyncTodo = create((set) => ({
+import { atom } from "jotai";
+import { createSlice } from '@reduxjs/toolkit'
+import { create } from "zustand";
 
+export const usersAtom = atom([
+  {
+    id: 1,
+    name: "Ali"
+  },
+  {
+    id: 2,
+    name: "Umar",
+   
+  },
+]);
+
+export const useTodo = create((set) => ({
   data: [
     {
       id: 1,
-      image: 'https://i.pravatar.cc/300?img=1',
-      name: 'Ali',
-      rule: 'Developer'
+      age: 13,
     },
     {
       id: 2,
-      image: 'https://i.pravatar.cc/300?img=2',
-      name: 'Asad',
-      rule: 'Designer'
-    }
+      age: 18,
+     
+    },
   ],
 
-  addData: (newUser) => set((state) => ({
-    data: [
-      ...state.data,
-      {
-        id: Date.now(),
-        ...newUser
-      }
-    ]
-  })),
+  count: 0,
+}));
 
 
-  deleteData: (id) => set((state) => ({
-    data: state.data.filter((item) => item.id !== id)
-  })),
 
-  
-  editData: (id, updatedUser) => set((state) => ({
-    data: state.data.map((item) =>
-      item.id === id
-        ? { ...item, ...updatedUser }
-        : item
-    )
-  }))
+const initialState = {
+  data: [
+    { id: 1, job: "student" },
+    { id: 2, job: "teacher" },
+    { id: 3, job: "bloger" },
+  ],
+};
 
-}))
+export const counterSlice = createSlice({
+  name: "counter",
+  initialState,
+  reducers: {
+    addJob: (state, action) => {
+      state.data.push(action.payload);
+    },
+  },
+});
 
-export default useSyncTodo
+export const { addJob } = counterSlice.actions;
+export default counterSlice.reducer;
