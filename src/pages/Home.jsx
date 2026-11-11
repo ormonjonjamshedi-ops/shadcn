@@ -1,205 +1,156 @@
-
+import useTodo from '@/Component/todo'
 import React, { useEffect, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-
-import {
-  getData,
-  handledelete,
-  addData,
-  editData
-} from '@/reduser/counter'
 
 const Home = () => {
-  const [img, setImg] = useState("")
-  const [name, setName] = useState("")
-  const [role, setRole] = useState("")
-  const [open, setOpen] = useState(false)
 
+  const {data,loading,getData,addData,deleteData,editData} = useTodo()
 
-  const [editOpen, setEditOpen] = useState(false)
+  const [image, setImage] = useState('')
+  const [name, setName] = useState('')
+  const [rule, setRule] = useState('')
+
   const [editId, setEditId] = useState(null)
-  const [editImg, setEditImg] = useState("")
-  const [editName, setEditName] = useState("")
-  const [editRole, setEditRole] = useState("")
-
-  const { data, isLoading } = useSelector((store) => store.counter)
-  const dispatch = useDispatch()
-
+  const [open, setOpen] = useState(false)
+ 
   useEffect(() => {
-    dispatch(getData())
-  }, [dispatch])
+    getData()
+  }, [])
 
-
-  const handleAdd = async (e) => {
-    e.preventDefault()
-
-    try {
-      await dispatch(addData({
-        img,
-        name,
-        role
-      })).unwrap()
-
-      setImg("")
-      setName("")
-      setRole("")
-      setOpen(false)
-
-    } catch (error) {
-      console.log(error)
-    }
+  const clearInputs = () => {
+    setImage('')
+    setName('')
+    setRule('')
+    setEditId(null)
+  }
+ 
+  const handleAdd = () => {
+    clearInputs()
+    setOpen(true)
+  }
+  const handleEdit = (user) => {
+    setImage(user.image || '')
+    setName(user.name || '')
+    setRule(user.rule || '')
+    setEditId(user.id)
+    setOpen(true)
   }
 
  
-  const handleEditOpen = (item) => {
-    setEditId(item.id)
-    setEditImg(item.img)
-    setEditName(item.name)
-    setEditRole(item.role)
+  const handleSubmit = async () => {
 
-    setEditOpen(true)
-  }
+    if (!name.trim() || !rule.trim()) return
 
-  const handleEdit = async (e) => {
-    e.preventDefault()
+    const newUser = {  image, name, rule  }
 
-    try {
-      await dispatch(editData({
-        id: editId,
-        img: editImg,
-        name: editName,
-        role: editRole
-      })).unwrap()
-
-      setEditOpen(false)
-
-    } catch (error) {
-      console.log(error)
+    if (editId !== null) {
+      await editData(editId, newUser)
+    } else {
+      await addData(newUser)
     }
+    clearInputs()
+    setOpen(false)
   }
+
 
   const handleDelete = async (id) => {
-    try {
-      await dispatch(handledelete(id)).unwrap()
-    } catch (error) {
-      console.log(error)
-    }
-  }
-
-  if (isLoading) {
-    return (
-      <div className="text-center text-3xl mt-20">
-        LOADING...
-      </div>
-    )
+    await deleteData(id)
   }
 
   return (
-    <div className="p-10">
-      <button onClick={() => setOpen(true)} className="bg-green-600 text-white px-8 py-3 rounded-xl mb-10">ADD +</button>
-      {open && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-white w-[400px] p-7 rounded-2xl shadow-2xl">
-
-            <form onSubmit={handleAdd} className="flex flex-col gap-4">
-
-              <input
-                type="text"
-                placeholder="Image URL"
-                value={img}
-                onChange={(e) => setImg(e.target.value)}
-                className="border p-3 rounded-lg text-black"
-                required
-              />
-
-              <input
-                type="text"
-                placeholder="Name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="border p-3 rounded-lg text-black"
-                required
-              />
-
-              <input
-                type="text"
-                placeholder="Role"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="border p-3 rounded-lg text-black"
-                required
-              />
-
-              <div className="flex gap-3 mt-3">
-                <button type="button" onClick={() => setOpen(false)} className="bg-gray-400 text-white p-3 rounded-lg w-full">Cancel</button>
-                <button type="submit" className="bg-green-600 text-white p-3 rounded-lg w-full">Add</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-   
-      {editOpen && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-white w-[400px] p-7 rounded-2xl shadow-2xl">
-            <form onSubmit={handleEdit} className="flex flex-col gap-4">
-
-              <input
-                type="text"
-                placeholder="Image URL"
-                value={editImg}
-                onChange={(e) => setEditImg(e.target.value)}
-                className="border p-3 rounded-lg text-black"
-                required
-              />
-
-              <input
-                type="text"  placeholder="Name"
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                className="border p-3 rounded-lg text-black"
-                required/>
-
-              <input
-                type="text"
-                placeholder="Role"
-                value={editRole}
-                onChange={(e) => setEditRole(e.target.value)}
-                className="border p-3 rounded-lg text-black"
-                required/>
-
-              <div className="flex gap-3 mt-3">
-                <button type="button" onClick={() => setEditOpen(false)} className="bg-gray-400 text-white p-3 rounded-lg w-full">Cancel</button>
-
-                <button type="submit" className="bg-green-600 text-white p-3 rounded-lg w-full">Save</button>
-              </div>
-
-            </form>
-          </div>
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-
-        {data?.map((e) => (
-          <div key={e.id} className="w-full border-2 bg-blue-100 text-center rounded-2xl p-5 shadow-lg">
-            <img src={e.image} alt={e.name} className="w-full h-80 object-cover rounded-xl"/>
-
-            <h1 className="text-2xl font-bold mt-3">{e.name}</h1>
-
-            <h1 className="text-lg text-gray-600">{e.role}</h1>
-
-            <div className="flex justify-center gap-3 mt-5">
-
-              <button className="p-3 bg-red-600 text-white rounded-xl" onClick={() => handleDelete(e.id)}>Delete</button>
-              <button className="p-3 bg-green-600 text-white rounded-xl"   onClick={() => handleEditOpen(e)}>Edit</button>
-</div>
-
-          </div>
-        ))}
-
+    <div className="min-h-screen bg-gray-100 p-10">
+      <div className="flex justify-between items-center mb-8">
+        <button onClick={handleAdd} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl">+ Add User</button>
       </div>
+
+      {open && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white w-full max-w-md p-6 rounded-2xl shadow-xl">
+            <h2 className="text-2xl font-bold mb-6 text-gray-800">{editId !== null ? 'Edit User' : 'Add User'}</h2>
+
+            <div className="flex flex-col gap-4">
+              <div>
+                <label className="block mb-2 font-medium">
+                  Image URL
+                </label>
+                <input
+                  type="text"
+                  className="border border-gray-300 p-3 rounded-lg w-full outline-none focus:border-blue-500"
+                  placeholder="Enter image URL"
+                  value={image}
+                  onChange={(e) => setImage(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block mb-2 font-medium">
+                  Name
+                </label>
+
+                <input
+                  type="text"
+                  className="border border-gray-300 p-3 rounded-lg w-full outline-none focus:border-blue-500"
+                  placeholder="Enter name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </div>
+
+             
+
+              <div>
+                <label className="block mb-2 font-medium">
+                  Rule
+                </label>
+
+                <input
+                  type="text"
+                  className="border border-gray-300 p-3 rounded-lg w-full outline-none focus:border-blue-500"
+                  placeholder="Enter rule"
+                  value={rule}
+                  onChange={(e) => setRule(e.target.value)}
+                />
+              </div>
+
+            </div>
+            <div className="flex gap-3 mt-7">
+              <button
+                onClick={() => {
+                  setOpen(false)
+                  clearInputs()
+                }}className="bg-gray-400 hover:bg-gray-500 text-white p-3 rounded-lg flex-1">Cancel</button>
+
+              <button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg flex-1">{editId !== null ? 'Save Changes' : 'Add User'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <h2 className="text-center text-xl font-semibold">
+          Loading...
+        </h2>
+      ) : (
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+          {data.map((user) => (
+
+            <div key={user.id}className="bg-white border border-gray-200 p-5 rounded-2xl shadow-md hover:shadow-xl transition">
+              <img src={user.image || 'https://placehold.co/400x250?text=No+Image'}alt={user.name}className="w-full h-48 object-cover rounded-xl"/>
+
+              <h2 className="text-2xl font-bold mt-4 text-gray-800">{user.name}</h2>
+              <p className="text-gray-500 mt-2 text-lg">{user.rule}</p>
+
+              <div className="flex gap-3 mt-5">
+                <button onClick={() => handleEdit(user)} className="bg-yellow-500 hover:bg-yellow-600 text-white px-5 py-2 rounded-lg flex-1">Edit</button>
+
+                <button onClick={() => handleDelete(user.id)} className="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg flex-1">Delete</button>
+              </div>
+            </div>  ))}
+
+        </div>
+
+      )}
+
     </div>
   )
 }
