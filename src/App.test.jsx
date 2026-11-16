@@ -1,63 +1,96 @@
-
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { render, screen, within } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import App from './App';
 
-it('Have user', () => {
-  render(<App />);
-
-  expect(screen.getByText('Ali')).toBeInTheDocument();
-  expect(screen.getByText('Vali')).toBeInTheDocument();
-});
-it('search work', async () => {
-  const user = userEvent.setup();
-  render(<App />);
-
-  const input = screen.getByPlaceholderText(/search by name/i);
-  await user.type(input, 'vali');
-
-  expect(screen.getByText('Vali')).toBeInTheDocument();
-  expect(screen.queryByText('Ali')).not.toBeInTheDocument();
+const { mockAdd, mockEdit, mockDelete } = vi.hoisted(() => {
+  const ok = () => vi.fn(() => ({ unwrap: () => Promise.resolve({}) }));
+  return { mockAdd: ok(), mockEdit: ok(), mockDelete: ok() };
 });
 
+vi.mock('./api/todo', () => ({
+  useGetTodosQuery: () => ({
+    data: {
+      data: [
+        { id: 1, name: 'Learn React', description: 'Study hooks', images: [], isCompleted: false },
+      ],
+    },
+    isLoading: false,
+    error: undefined,
+  }),
+  useGetTodoByIdQuery: () => ({ data: undefined, isFetching: false }),
+  useAddTodoMutation: () => [mockAdd],
+  useEditTodoMutation: () => [mockEdit],
+  useDeleteTodoMutation: () => [mockDelete],
+}));
 
-it('Delete work', async () => {
-  const user = userEvent.setup();
-  render(<App />);
+describe('App', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
-  const deleteButtons = screen.getAllByRole('button', { name: 'Delete' });
-  await user.click(deleteButtons[0]);
+  it('shows the todo list', () => {
+    render(<App />);
+    expect(screen.getByText('Learn React')).toBeInTheDocument();
+    expect(screen.getByText('Study hooks')).toBeInTheDocument();
+  });
 
-  expect(screen.queryByText('Ali')).not.toBeInTheDocument();
-  expect(screen.getByText('Vali')).toBeInTheDocument();
-});
+  it('opens the add modal', async () => {
+    const user = userEvent.setup();
+    render(<App />);
 
-it('Add users', async () => {
-  const user = userEvent.setup();
-  render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Add Task' }));
+    expect(screen.getByText('New Task')).toBeInTheDocument();
+  });
 
- 
-  await user.click(screen.getByRole('button', { name: 'Add User' }));
+  it('shows validation errors for empty form', async () => {
+    const user = userEvent.setup();
+    render(<App />);
 
-  await user.type(screen.getByPlaceholderText('Enter your name'), 'Rustam');
-  await user.type(screen.getByPlaceholderText('Enter your email'), 'r@mail.com');
+    await user.click(screen.getByRole('button', { name: 'Add Task' }));
+    await user.click(screen.getByRole('button', { name: 'Add' }));
 
-  const form = screen.getByPlaceholderText('Enter your name').closest('form');
-  await user.click(within(form).getByRole('button', { name: 'Add User' }));
+    expect(await screen.findByText('Name is required')).toBeInTheDocument();
+    expect(await screen.findByText('Description is required')).toBeInTheDocument();
+    expect(mockAdd).not.toHaveBeenCalled();
+  });
 
-  expect(await screen.findByText('Rustam')).toBeInTheDocument();
-});
+  it('adds a new task', async () => {
+    const user = userEvent.setup();
+    render(<App />);
 
+    await user.click(screen.getByRole('button', { name: 'Add Task' }));
+    await user.type(screen.getByPlaceholderText('Name'), 'Buy milk');
+    await user.type(screen.getByPlaceholderText('Description'), 'From the shop');
+    await user.click(screen.getByRole('button', { name: 'Add' }));
 
-it('if get error say', async () => {
-  const user = userEvent.setup();
-  render(<App />);
+    await waitFor(() => expect(mockAdd).toHaveBeenCalledTimes(1));
+  });
 
-  await user.click(screen.getByRole('button', { name: 'Add User' }));
+  it('edits a task with JSON data', async () => {
+    const user = userEvent.setup();
+    render(<App />);
 
-  const form = screen.getByPlaceholderText('Enter your name').closest('form');
-  await user.click(within(form).getByRole('button', { name: 'Add User' }));
+    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    expect(screen.getByPlaceholderText('Name')).toHaveValue('Learn React');
 
-  expect(await screen.findByText('Name is required')).toBeInTheDocument();
-  
+    await user.type(screen.getByPlaceholderText('Name'), ' 2');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() =>
+      expect(mockEdit).toHaveBeenCalledWith(
+        expect.objectContaining({ id: 1, name: 'Learn React 2' })
+      )
+    );
+  });
+
+  it('deletes a task after confirm', async () => {
+    const user = userEvent.setup();
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: 'Delete' }));
+
+    await waitFor(() => expect(mockDelete).toHaveBeenCalledWith(1));
+  });
 });
