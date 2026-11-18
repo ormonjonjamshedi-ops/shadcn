@@ -1,7 +1,6 @@
 import { create } from 'zustand'
 
 const useSyncTodo = create((set) => ({
-
   data: [
     {
       id: 1,
@@ -27,12 +26,10 @@ const useSyncTodo = create((set) => ({
     ]
   })),
 
-
   deleteData: (id) => set((state) => ({
     data: state.data.filter((item) => item.id !== id)
   })),
 
-  
   editData: (id, updatedUser) => set((state) => ({
     data: state.data.map((item) =>
       item.id === id
@@ -40,7 +37,6 @@ const useSyncTodo = create((set) => ({
         : item
     )
   }))
-
 }))
 
 export default useSyncTodo

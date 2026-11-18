@@ -30,8 +30,7 @@ export const Lauout = () => {
               to="/"
               className={buttonVariants({
                 variant: "secondary",
-              })}
-            >
+              })}>
               Home
             </Link>
 
@@ -41,12 +40,44 @@ export const Lauout = () => {
                 variant: "ghost",
               })}
             >
-              About
+              AsyncJotay
             </Link>
+             <Link
+              to="/zustand"
+              className={buttonVariants({
+                variant: "ghost",
+              })}
+            >
+              AsyncZustand
+            </Link>
+             <Link
+              to="/redux"
+              className={buttonVariants({
+                variant: "ghost",
+              })}
+            >
+              AsyncRedux
+            </Link>
+             <Link
+              to="/Asincjotay"
+              className={buttonVariants({
+                variant: "ghost",
+              })}
+            >
+             SyncJotay
+            </Link>
+             <Link
+              to="/SyncZus"
+              className={buttonVariants({
+                variant: "ghost",
+              })}
+            >
+             SyncZustand
+            </Link>
+             <Link to="/SyncRedux"className={buttonVariants({ variant: "ghost",})}>SyncRedux</Link>
           </div>
         </nav>
       </header>
-
       <main className="flex-1">
         <Outlet />
       </main>
