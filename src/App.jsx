@@ -1,318 +1,163 @@
-import './App.css'
-import * as React from "react"
-import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer"
-import { Label } from "@/components/ui/label"
+import { useRef, useState } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import axios from 'axios'
 
-const initialData = [
-  {
-    id: "1",
-    name: "Sarah Chen",
-    email: "sarah.chen@example.com",
-    role: "Admin",
-  },
-  {
-    id: "2",
-    name: "Marcus Rodriguez",
-    email: "marcus.rodriguez@example.com",
-    role: "User",
-  },
-  {
-    id: "3",
-    name: "Priya Patel",
-    email: "priya.patel@example.com",
-    role: "User",
-  },
-  {
-    id: "4",
-    name: "David Kim",
-    email: "david.kim@example.com",
-    role: "Editor",
-  },
-]
+const api = 'https://6aac8504a2413bf0ec10d4af.mockapi.io/furniture-shop'
+const emptyForm = { id: null, name: '', status: false, image: '' }
 
-export default function CheckboxInTable() {
-  const [tableData, setTableData] = React.useState(initialData)
-  const [selectedRows, setSelectedRows] = React.useState(new Set(["1"]))
-  const [search, setSearch] = React.useState("")
+const App = () => {
+    const queryClient = useQueryClient()
+    const [form, setForm] = useState(emptyForm)
+    const modal = useRef(null)
 
-  const [openAdd, setOpenAdd] = React.useState(false)
-  const [formData, setFormData] = React.useState({
-    name: "",
-    email: "",
-    role: "User",
-  })
+    const { data = [], isLoading, isError } = useQuery({
+        queryKey: ['items'],
+        queryFn: async () => {
+            const res = await axios.get(api)
+            return res.data
+        },
+    })
 
-  const [openEdit, setOpenEdit] = React.useState(false)
-  const [editData, setEditData] = React.useState({
-    id: "",
-    name: "",
-    email: "",
-    role: "User",
-  })
+    const refresh = () => queryClient.invalidateQueries({ queryKey: ['items'] })
 
-  const filteredData = tableData.filter((row) => {
-    const searchLower = search.toLowerCase()
+    const addItem = useMutation({
+        mutationFn: (item) => axios.post(api, item),
+        onSuccess: refresh,
+    })
+
+    const deleteItem = useMutation({
+        mutationFn: (id) => axios.delete(`${api}/${id}`),
+        onSuccess: refresh,
+    })
+
+    const updateItem = useMutation({
+        mutationFn: (item) => axios.put(`${api}/${item.id}`, item),
+        onSuccess: refresh,
+    })
+
+ 
+    const handleSubmit = (e) => {
+        e.preventDefault()
+        const formData = new FormData(e.currentTarget)
+
+        const item = {
+            name: formData.get('name'),
+            image: formData.get('image'),
+            status: formData.get('status') === 'on',
+        }
+
+        if (form.id) {
+            updateItem.mutate({ ...item, id: form.id })
+        } else {
+            addItem.mutate(item)
+        }
+
+        modal.current.close()
+    }
+
+  
+    const openForm = (item = emptyForm) => {
+        setForm({ ...emptyForm, ...item })
+        modal.current.showModal()
+    }
+
+    if (isLoading) return <h1 className='text-center mt-20 text-xl'>Loading...</h1>
+    if (isError) return <h1 className='text-center mt-20 text-xl text-red-500'>Error!</h1>
+
     return (
-      row.name.toLowerCase().includes(searchLower) ||
-      row.email.toLowerCase().includes(searchLower) ||
-      row.role.toLowerCase().includes(searchLower)
-    )
-  })
+        <div className='min-h-screen bg-slate-50 p-6'>
+            <div className='max-w-5xl mx-auto'>
+            
+                <div className='flex justify-between items-center mb-8'>
+                    <h1 className='text-3xl font-bold'>Furniture Shop</h1>
+                    <button
+                        className='bg-indigo-600 text-white rounded-lg px-4 py-2 cursor-pointer'
+                        onClick={() => openForm()}
+                    >+ Add</button>
+                </div>
 
-  const isAllSelected =
-    filteredData.length > 0 && selectedRows.size === filteredData.length
-  const isIndeterminate =
-    selectedRows.size > 0 && selectedRows.size < filteredData.length
+                <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
+                    {data.length === 0 && <p>Nothing found.</p>}
 
-  const handleSelectAll = (checked) => {
-    if (checked === true) {
-      setSelectedRows(new Set(filteredData.map((row) => row.id)))
-    } else {
-      setSelectedRows(new Set())
-    }
-  }
+                    {data.map((elem) => (
+                        <div key={elem.id} className='bg-white rounded-xl shadow p-4 flex flex-col gap-3'>
+                            {elem.image && (
+                                <img
+                                    src={elem.image}
+                                    alt={elem.name}
+                                    className='w-full h-48 object-cover rounded-lg'
+                                />
+                            )}
 
-  const handleSelectRow = (id, checked) => {
-    const newSelected = new Set(selectedRows)
-    if (checked) {
-      newSelected.add(id)
-    } else {
-      newSelected.delete(id)
-    }
-    setSelectedRows(newSelected)
-  }
+                            <h2 className='text-lg font-semibold'>{elem.name}</h2>
 
-  const handleDelete = (id) => {
-    setTableData((prev) => prev.filter((row) => row.id !== id))
-    setSelectedRows((prev) => {
-      const newSelected = new Set(prev)
-      newSelected.delete(id)
-      return newSelected
-    })
-  }
+                            <label className='flex items-center gap-2 text-sm cursor-pointer'>
+                                <input
+                                    type='checkbox'
+                                    checked={elem.status}
+                                    onChange={() => updateItem.mutate({ ...elem, status: !elem.status })}
+                                />
+                                {elem.status ? 'Online' : 'Offline'}
+                            </label>
 
-  // ADD
-  const handleAdd = (e) => {
-    e.preventDefault()
-    if (!formData.name || !formData.email) return
+                            <div className='flex gap-2'>
+                                <button
+                                    className='flex-1 border border-red-300 text-red-600 rounded-lg py-2 cursor-pointer'
+                                    onClick={() => deleteItem.mutate(elem.id)}
+                                >
+                                    Delete
+                                </button>
+                                <button
+                                    className='flex-1 border rounded-lg py-2 cursor-pointer'
+                                    onClick={() => openForm(elem)}
+                                >
+                                    Edit
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
 
-    const newUser = {
-      id: Date.now().toString(),
-      name: formData.name,
-      email: formData.email,
-      role: formData.role,
-    }
+            <dialog className='m-auto w-[90%] max-w-md rounded-xl p-6 backdrop:bg-black/50' ref={modal}>
+                <form key={form.id ?? 'new'} className='flex flex-col gap-4' onSubmit={handleSubmit}>
+                    <h1 className='text-xl font-semibold'>{form.id ? 'Edit' : 'Add'}</h1>
 
-    setTableData((prev) => [...prev, newUser])
-    setFormData({ name: "", email: "", role: "User" })
-    setOpenAdd(false)
-  }
+                    <input
+                        className='border rounded-lg px-3 py-2'
+                        name='name'
+                        defaultValue={form.name}
+                        placeholder='Name...'
+                        required
+                    />
+                    <input
+                        className='border rounded-lg px-3 py-2'
+                        name='image'
+                        defaultValue={form.image}
+                        placeholder='Image URL...'
+                    />
 
-  // EDIT
-  const openEditDrawer = (row) => {
-    setEditData({
-      id: row.id,
-      name: row.name,
-      email: row.email,
-      role: row.role,
-    })
-    setOpenEdit(true)
-  }
+                    <label className='flex items-center gap-2 text-sm'>
+                        <input type='checkbox' name='status' defaultChecked={form.status} />
+                        Online
+                    </label>
 
-  const handleEdit = (e) => {
-    e.preventDefault()
-    if (!editData.name || !editData.email) return
-
-    setTableData((prev) =>
-      prev.map((row) =>
-        row.id === editData.id
-          ? {
-              ...row,
-              name: editData.name,
-              email: editData.email,
-              role: editData.role,
-            }
-          : row
-      )
-    )
-    setOpenEdit(false)
-  }
-
-  return (
-    <div className="p-6 space-y-4">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <Input
-            type="search"
-            placeholder="Search by name, email or role..."
-            className="w-72"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          {search && (
-            <Button variant="ghost" onClick={() => setSearch("")}>
-              Clear
-            </Button>
-          )}
-        </div>
-
-        <Dialog open={openAdd} onOpenChange={setOpenAdd}>
-          <DialogTrigger asChild>
-            <Button>ADD +</Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Add user</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleAdd} className="space-y-4">
-              <div className="space-y-2">
-                <Label>Name</Label>
-                <Input  value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value }) } placeholder="Enter name"  /> </div>
-              <div className="space-y-2">
-                <Label>Email</Label>
-                <Input value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value }) }
-                  placeholder="email@example.com" />
-              </div>
-              <div className="space-y-2">
-                <Label>Role</Label>
-                <select
-                  value={formData.role}
-                  onChange={(e) =>
-                    setFormData({ ...formData, role: e.target.value }) }
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                  <option value="Admin">Admin</option>
-                  <option value="Editor">Editor</option>
-                  <option value="User">User</option>
-                </select>
-              </div>
-              <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setOpenAdd(false)}
-                >Cancel</Button>
-                <Button type="submit">Save</Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-10">
-                <Checkbox
-                  checked={  isAllSelected ? true : isIndeterminate  ? "indeterminate"   : false }onCheckedChange={handleSelectAll} />
-              </TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredData.length === 0 ? (
-              <TableRow>
-                <TableCell  colSpan={5}  className="h-24 text-center text-muted-foreground" >
-                  Ҳеҷ натиҷа ёфт нашуд
-                </TableCell>
-              </TableRow> ) : (
-              filteredData.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={selectedRows.has(row.id) ? "selected" : undefined}>
-                  <TableCell>
-                    <Checkbox
-                      checked={selectedRows.has(row.id)}
-                      onCheckedChange={(checked) =>
-                        handleSelectRow(row.id, checked === true)
-                      }/>
-                  </TableCell>
-                  <TableCell className="font-medium">{row.name}</TableCell>
-                  <TableCell>{row.email}</TableCell>
-                  <TableCell>{row.role}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button size="sm" variant="outline">
-                        Info
-                      </Button>
-                    <Button size="sm" variant="outline" onClick={() => openEditDrawer(row)}>   Edit </Button>
-
-                      <Button
-                       size="sm" variant="destructive" onClick={() => handleDelete(row.id)} >Delete</Button>  
+                    <div className='flex justify-end gap-2'>
+                        <button
+                            className='border rounded-lg px-4 py-2 cursor-pointer'
+                            type='button'
+                            onClick={() => modal.current.close()}
+                        >
+                            Cancel
+                        </button>
+                        <button className='bg-indigo-600 text-white rounded-lg px-4 py-2 cursor-pointer' type='submit'>
+                            Save
+                        </button>
                     </div>
-                  </TableCell>
-                </TableRow> ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      <Drawer open={openEdit} onOpenChange={setOpenEdit}>
-        <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>Edit user</DrawerTitle>
-          </DrawerHeader>
-
-          <form onSubmit={handleEdit} className="px-4 space-y-4">
-            <div className="space-y-2">
-              <Label>Name</Label>
-              <Input
-                value={editData.name}
-                onChange={(e) => setEditData({ ...editData, name: e.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <Input
-                value={editData.email} onChange={(e) => setEditData({ ...editData, email: e.target.value }) }/>
-            </div>
-            <div className="space-y-2">
-              <Label>Role</Label>
-              <select value={editData.role}   onChange={(e) =>  setEditData({ ...editData, role: e.target.value }) }
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                <option value="Admin">Admin</option>
-                <option value="Editor">Editor</option>
-                <option value="User">User</option>
-              </select>
-            </div>
-            <DrawerFooter className="px-0">
-              <Button type="submit">Save changes</Button>
-              <DrawerClose asChild>
-                <Button type="button" variant="outline">   Cancel </Button>
-              </DrawerClose>
-            </DrawerFooter>
-          </form>
-        </DrawerContent>
-      </Drawer>
-    </div>
-  )
+                </form>
+            </dialog>
+        </div>
+    )
 }
+
+export default App
