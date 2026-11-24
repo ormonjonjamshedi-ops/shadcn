@@ -1,163 +1,214 @@
-import { useRef, useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import axios from 'axios'
+import { useState } from "react";
 
-const api = 'https://6aac8504a2413bf0ec10d4af.mockapi.io/furniture-shop'
-const emptyForm = { id: null, name: '', status: false, image: '' }
+import {
+  useAddUser,
+  useDeleteUser,
+  useEditUser,
+  useUsers,
+} from "./api/todo";
 
-const App = () => {
-    const queryClient = useQueryClient()
-    const [form, setForm] = useState(emptyForm)
-    const modal = useRef(null)
+function App() {
+  const { data, isLoading, isError } = useUsers();
 
-    const { data = [], isLoading, isError } = useQuery({
-        queryKey: ['items'],
-        queryFn: async () => {
-            const res = await axios.get(api)
-            return res.data
+  const addUser = useAddUser();
+  const deleteUser = useDeleteUser();
+  const editUser = useEditUser();
+
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [images, setImages] = useState([]);
+  const [editId, setEditId] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  function clearForm() {
+    setName("");
+    setDescription("");
+    setImages([]);
+    setEditId(null);
+    setIsModalOpen(false);
+
+    const fileInput = document.getElementById("imageInput");
+
+    if (fileInput) {
+      fileInput.value = "";
+    }
+  }
+
+  function openAddModal() {
+    clearForm();
+    setIsModalOpen(true);
+  }
+
+
+  function handleSubmit(e) {
+    e.preventDefault();
+
+    if (!name.trim() || !description.trim()) {
+      alert("Please enter a name and description!");
+      return;
+    }
+
+    if (editId !== null) {
+      editUser.mutate(
+        {
+          Id: editId,
+          Name: name,
+          Description: description,
         },
-    })
+        {
+          onSuccess: clearForm,
+        }
+      );
+    } 
 
-    const refresh = () => queryClient.invalidateQueries({ queryKey: ['items'] })
+    else {
+      if (images.length === 0) {
+        alert("Please select at least one image!");
+        return;
+      }
 
-    const addItem = useMutation({
-        mutationFn: (item) => axios.post(api, item),
-        onSuccess: refresh,
-    })
-
-    const deleteItem = useMutation({
-        mutationFn: (id) => axios.delete(`${api}/${id}`),
-        onSuccess: refresh,
-    })
-
-    const updateItem = useMutation({
-        mutationFn: (item) => axios.put(`${api}/${item.id}`, item),
-        onSuccess: refresh,
-    })
+      addUser.mutate(
+        {
+          Name: name,
+          Description: description,
+          Images: images,
+        },
+        {
+          onSuccess: clearForm,
+        }
+      );
+    }
+  }
 
  
-    const handleSubmit = (e) => {
-        e.preventDefault()
-        const formData = new FormData(e.currentTarget)
+  function handleEdit(user) {
+    setEditId(user.id);
+    setName(user.name || "");
+    setDescription(user.description || "");
+    setImages([]);
+    setIsModalOpen(true);
+  }
 
-        const item = {
-            name: formData.get('name'),
-            image: formData.get('image'),
-            status: formData.get('status') === 'on',
-        }
+  function handleDelete(id) {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this task?"
+    );
 
-        if (form.id) {
-            updateItem.mutate({ ...item, id: form.id })
-        } else {
-            addItem.mutate(item)
-        }
-
-        modal.current.close()
+    if (confirmDelete) {
+      deleteUser.mutate(id);
     }
+  }
 
-  
-    const openForm = (item = emptyForm) => {
-        setForm({ ...emptyForm, ...item })
-        modal.current.showModal()
-    }
-
-    if (isLoading) return <h1 className='text-center mt-20 text-xl'>Loading...</h1>
-    if (isError) return <h1 className='text-center mt-20 text-xl text-red-500'>Error!</h1>
-
+  if (isLoading) {
     return (
-        <div className='min-h-screen bg-slate-50 p-6'>
-            <div className='max-w-5xl mx-auto'>
-            
-                <div className='flex justify-between items-center mb-8'>
-                    <h1 className='text-3xl font-bold'>Furniture Shop</h1>
-                    <button
-                        className='bg-indigo-600 text-white rounded-lg px-4 py-2 cursor-pointer'
-                        onClick={() => openForm()}
-                    >+ Add</button>
-                </div>
+      <h1 className="text-center text-3xl mt-20">Loading...</h1>
+    );
+  }
 
-                <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6'>
-                    {data.length === 0 && <p>Nothing found.</p>}
+  if (isError) {
+    return (
+      <h1 className="text-center text-red-500 text-2xl mt-20">Something went wrong!</h1>
+    );
+  }
 
-                    {data.map((elem) => (
-                        <div key={elem.id} className='bg-white rounded-xl shadow p-4 flex flex-col gap-3'>
-                            {elem.image && (
-                                <img
-                                    src={elem.image}
-                                    alt={elem.name}
-                                    className='w-full h-48 object-cover rounded-lg'
-                                />
-                            )}
-
-                            <h2 className='text-lg font-semibold'>{elem.name}</h2>
-
-                            <label className='flex items-center gap-2 text-sm cursor-pointer'>
-                                <input
-                                    type='checkbox'
-                                    checked={elem.status}
-                                    onChange={() => updateItem.mutate({ ...elem, status: !elem.status })}
-                                />
-                                {elem.status ? 'Online' : 'Offline'}
-                            </label>
-
-                            <div className='flex gap-2'>
-                                <button
-                                    className='flex-1 border border-red-300 text-red-600 rounded-lg py-2 cursor-pointer'
-                                    onClick={() => deleteItem.mutate(elem.id)}
-                                >
-                                    Delete
-                                </button>
-                                <button
-                                    className='flex-1 border rounded-lg py-2 cursor-pointer'
-                                    onClick={() => openForm(elem)}
-                                >
-                                    Edit
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            <dialog className='m-auto w-[90%] max-w-md rounded-xl p-6 backdrop:bg-black/50' ref={modal}>
-                <form key={form.id ?? 'new'} className='flex flex-col gap-4' onSubmit={handleSubmit}>
-                    <h1 className='text-xl font-semibold'>{form.id ? 'Edit' : 'Add'}</h1>
-
-                    <input
-                        className='border rounded-lg px-3 py-2'
-                        name='name'
-                        defaultValue={form.name}
-                        placeholder='Name...'
-                        required
-                    />
-                    <input
-                        className='border rounded-lg px-3 py-2'
-                        name='image'
-                        defaultValue={form.image}
-                        placeholder='Image URL...'
-                    />
-
-                    <label className='flex items-center gap-2 text-sm'>
-                        <input type='checkbox' name='status' defaultChecked={form.status} />
-                        Online
-                    </label>
-
-                    <div className='flex justify-end gap-2'>
-                        <button
-                            className='border rounded-lg px-4 py-2 cursor-pointer'
-                            type='button'
-                            onClick={() => modal.current.close()}
-                        >
-                            Cancel
-                        </button>
-                        <button className='bg-indigo-600 text-white rounded-lg px-4 py-2 cursor-pointer' type='submit'>
-                            Save
-                        </button>
-                    </div>
-                </form>
-            </dialog>
+  return (
+    <div className="min-h-screen bg-gray-100 p-5">
+      <div className="max-w-6xl mx-auto">
+        <h1 className="text-4xl font-bold text-center mb-8 text-blue-600">My ToDo List</h1>
+        <div className="flex justify-end mb-6">
+          <button onClick={openAddModal} className="bg-blue-600 text-white px-7 py-3 rounded-lg hover:bg-blue-700">+ Add ToDo</button>
         </div>
-    )
+
+
+{isModalOpen && (
+  <div className="fixed inset-0 bg-black/50 flex justify-center items-center p-4">
+    <div className="bg-white w-full max-w-lg p-6 rounded-xl">
+
+      <div className="flex justify-between items-center mb-5">
+        <h2 className="text-2xl font-bold"> {editId !== null ? "Edit ToDo" : "Add ToDo"}</h2>
+        <button onClick={clearForm}className="text-2xl text-red-500">X</button>
+      </div>
+
+      <form onSubmit={handleSubmit}>
+        <label className="block mb-2 font-semibold">Name</label>
+
+        <input type="text"placeholder="Enter name"
+          value={name}onChange={(e) => setName(e.target.value)}className="w-full border p-3 rounded-lg mb-4"
+        />
+
+        <label className="block mb-2 font-semibold">Description</label>
+        <textarea placeholder="Enter description" value={description}
+          onChange={(e) => setDescription(e.target.value)}className="w-full border p-3 rounded-lg mb-4"rows="3"/>
+        <label className="block mb-2 font-semibold">Images</label>
+        <input
+          id="imageInput"
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={(e) => setImages(Array.from(e.target.files))}
+          className="w-full border p-3 rounded-lg mb-5"
+        />
+        <div className="flex justify-end gap-3">
+          <button type="button" onClick={clearForm} className="bg-gray-400 text-white px-5 py-2 rounded-lg">Close</button>
+          <button type="submit" disabled={addUser.isPending || editUser.isPending} className="bg-blue-600 text-white px-5 py-2 rounded-lg">
+            {addUser.isPending || editUser.isPending? "Loading...": editId !== null? "Update": "Add"}
+          </button>
+        </div>
+      </form>
+    </div>
+   </div>
+          )}
+        <div className="bg-white rounded-xl shadow-lg overflow-x-auto">
+          <table className="w-full text-left">
+            <thead className="bg-blue-600 text-white">
+              <tr>
+                <th className="p-4">Image</th>
+                <th className="p-4">Name</th>
+                <th className="p-4">Description</th>
+                <th className="p-4">Status</th>
+                <th className="p-4">Delete</th>
+                <th className="p-4">Edit</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {data?.map((user) => (
+                <tr key={user.id}  className="border-b hover:bg-gray-50" >
+                  <td className="p-4">
+                    {user.images?.length > 0 ? (
+                      <img src={`https://to-dos-api.softclub.tj/images/${user.images[0].imageName}`}alt={user.name} className="w-16 h-16 object-cover rounded-lg"/>
+                    ) : (
+                      <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center text-sm">No image</div>
+                    )}
+                  </td>
+
+                  <td className="p-4 font-semibold">{user.name}</td>
+                  <td className="p-4">{user.description}</td>
+                  <td className="p-4">
+                    <span className={`px-3 py-1 rounded-full text-white text-sm ${user.isCompleted? "bg-green-500": "bg-orange-500"}`}>{user.isCompleted ? "Completed" : "Pending"}</span>
+                  </td>
+
+                  <td className="p-4">
+                    <button onClick={() => handleDelete(user.id)} className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">Delete</button>
+                  </td>
+
+                  <td className="p-4">
+                    <button onClick={() => handleEdit(user)} className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600">Edit</button>
+                  </td>
+
+                </tr>
+              ))}
+      
+              {data?.length === 0 && (
+                <tr>
+                    <td colSpan="6"className="text-center p-8 text-gray-500">No tasks found!</td>
+                    </tr>)}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
 }
 
-export default App
+export default App;
